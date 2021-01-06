@@ -14,7 +14,9 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 using System;
+using System.Globalization;
 using System.IO;
+using iText.IO.Font;
 using iText.IO.Font.Constants;
 using iText.IO.Image;
 using iText.IO.Util;
@@ -30,114 +32,22 @@ namespace DuckCalendar
 {
     class Program
     {
-        // static readonly string target = @"D:\Temp\Astley.pdf";
-
-        private static void Hello(string target)
-        {
-            var dest = new FileInfo(target);
-
-            var writer = new PdfWriter(dest);
-            var pdf = new PdfDocument(writer);
-            var document = new Document(pdf);
-            document.Add(new Paragraph("Hello World 2!"));
-            document.Close();
-        }
-
-        private static void Astley(string target)
-        {
-            var dest = new FileInfo(target);
-
-            var writer = new PdfWriter(dest);
-            var pdf = new PdfDocument(writer);
-            var document = new Document(pdf);
-
-            // Creating a PdfFont
-            var font = PdfFontFactory.CreateFont(StandardFonts.TIMES_ROMAN);
-            document.Add(new Paragraph("itext:").SetFont(font));
-
-            var list = new List().SetSymbolIndent(12).SetListSymbol("\u2022").SetFont(font);
-            list.Add(new ListItem("Never gonna give you up"))
-                .Add(new ListItem("Never gonna let you down"))
-                .Add(new ListItem("Never gonna run around and desert you"))
-                .Add(new ListItem("Never gonna make you cry"))
-                .Add(new ListItem("Never gonna say goodbye"))
-                .Add(new ListItem("Never gonna tell a lie and hurt you"));
-            document.Add(list);
-            document.Close();
-        }
-
-        private static void FoxAndDog(string target, string dogf, string foxf)
-        {
-            var dest = new FileInfo(target);
-
-            var writer = new PdfWriter(dest);
-            var pdf = new PdfDocument(writer);
-            var document = new Document(pdf);
-
-            iText.Layout.Element.Image fox = new Image(ImageDataFactory.Create(foxf));
-            iText.Layout.Element.Image dog = new Image(ImageDataFactory.Create(dogf));
-            Paragraph p = new Paragraph("The quick brown ").Add(fox).Add(" jumps over the lazy ").Add(dog);
-            document.Add(p);
-            document.Close();
-        }
-
-        private static void DataTable(string target, string data)
-        {
-            var dest = new FileInfo(target);
-
-            var writer = new PdfWriter(dest);
-            var pdf = new PdfDocument(writer);
-            var document = new Document(pdf, PageSize.A4.Rotate());
-
-            document.SetMargins(20, 20, 20, 20);
-
-            var font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
-            var bold = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
-
-            var table = new Table(UnitValue.CreatePercentArray(new float[]
-            {
-                4, 1, 3, 4, 3, 3, 3, 3, 1 
-            })).UseAllAvailableWidth();
-
-            using (StreamReader sr = File.OpenText(data))
-            {
-                var line = sr.ReadLine();
-                Process(table, line, bold, true);
-                while ((line = sr.ReadLine()) != null)
-                {
-                    Process(table, line, font, false);
-                }
-            }
-
-            document.Add(table);
-            document.Close();
-        }
-
-        public static void Process(Table table, String line, PdfFont font, bool isHeader)
-        {
-            var tokenizer = new StringTokenizer(line, ";");
-            while (tokenizer.HasMoreTokens())
-            {
-                var cell = new Cell().Add(new Paragraph(tokenizer.NextToken()).SetFont(font));
-                if (isHeader)
-                {
-                    table.AddHeaderCell(cell);
-                } else
-                {
-                    table.AddCell(cell);
-                }
-            }
-        }
 
         public struct Giorno
         {
             int numero;
             string nome;
+            public bool Festivo
+            {
+                get;
+            }
 
-            public Giorno(int numero, string nome)
+
+            public Giorno(int numero, string nome, bool festivo)
             {
                 this.numero = numero;
                 this.nome = nome;
+                this.Festivo = festivo;
             }
 
             public string Stampa()
@@ -152,62 +62,185 @@ namespace DuckCalendar
             }
         }
 
-        private static void Calendar(string target)
+
+        public const int Month_Start = 1;
+        public const int Month_End = 12;
+        static string UppercaseFirst(string s)
         {
-            var dest = new FileInfo(target);
+            // Check for empty string.
+            if (string.IsNullOrEmpty(s))
+            {
+                return string.Empty;
+            }
+            // Return char and concat substring.
+            return char.ToUpper(s[0]) + s.Substring(1);
+        }
 
-            var writer = new PdfWriter(dest);
-            var pdf = new PdfDocument(writer);
-            var document = new Document(pdf, PageSize.A4);
+        static DeviceRgb rosso = new DeviceRgb(245, 15, 15);
+        static DeviceRgb bianco = new DeviceRgb(255, 255, 255);
 
-            var cellHeight = (PageSize.A4.GetHeight() - 40) / 18;
-
-            document.SetMargins(20, 20, 20, 20);
-
+        private static void MonthPage(int mesenum, PdfFont font, Document document, int year)
+        {
             var table = new Table(new float[2]).UseAllAvailableWidth();
             table.SetMarginTop(0);
             table.SetMarginBottom(0);
 
-            var rosso = new DeviceRgb(245, 15, 15);
-            var bianco = new DeviceRgb(255, 255, 255);
+            string monthName = UppercaseFirst(CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(mesenum)) + " " + year;
+            DateTimeFormatInfo dtfi = CultureInfo.CurrentCulture.DateTimeFormat;
+            // CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames
 
-            var cell = new Cell(2, 2).Add(new Paragraph("Gennaio"));
+            var cell = new Cell(2, 2).Add(new Paragraph(monthName).SetFont(font).SetFontSize(32));
             cell.SetTextAlignment(TextAlignment.CENTER);
             cell.SetVerticalAlignment(VerticalAlignment.MIDDLE);
             cell.SetFontColor(bianco);
             cell.SetBackgroundColor(rosso);
-            // cell.SetHeight(cellHeight * 2);
             table.AddCell(cell);
 
             // popoliamo il mese
             var mese = new Giorno[32];
             // TODO vedere i mesi e quando inizia l'anno
+            DateTime myDT = new DateTime(year, mesenum, 1, new GregorianCalendar());
+            int curMonth = myDT.Month;
             for (int i = 1; i <= 31; i++)
             {
-                mese[i - 1] = new Giorno(i, "Dormidì");
-            }
-            mese[31] = new Giorno(0, "");
+                if (curMonth != myDT.Month)
+                {
+                    mese[i - 1] = new Giorno(0, "", false);
+                } else
+                {
+                    DayOfWeek dw = myDT.DayOfWeek;
+                    
+                    mese[i - 1] = new Giorno(myDT.Day, UppercaseFirst(dtfi.GetAbbreviatedDayName(dw)), dw == DayOfWeek.Sunday || IsFestivity(myDT.Day, myDT.Month));
+                }
+                myDT = myDT.AddDays(1);
+
+             }
+            mese[31] = new Giorno(0, "", false);
 
             for (int i = 0; i < 16; i++)
             {
-                cell = new Cell().Add(new Paragraph(mese[i].Stampa())).SetHeight(cellHeight);
+                Giorno giorno = mese[i];
+                cell = MakeDayCell(giorno, font);
                 table.AddCell(cell);
-                cell = new Cell().Add(new Paragraph(mese[i + 16].Stampa())).SetHeight(cellHeight);
+                giorno = mese[i + 16];
+                cell = MakeDayCell(giorno, font);
                 table.AddCell(cell);
             }
-
+            table.SetHeight(PageSize.A4.GetHeight() - 80);
             document.Add(table);
-            document.Close();
+        }
 
+        private static Cell MakeDayCell(Giorno giorno, PdfFont font)
+        {
+            Cell cell = new Cell().Add(new Paragraph(giorno.Stampa()).SetFont(font).SetFontSize(16)); // .SetHeight(cellHeight);
+            cell.SetPaddingLeft(10);
+            cell.SetVerticalAlignment(VerticalAlignment.MIDDLE);
+            if (giorno.Festivo)
+            {
+                cell.SetFontColor(rosso);
+            }
+            return cell;
+        }
+
+        // TODO: put into a better data structure
+        // TODO: calculate easters
+        private static bool IsFestivity(int day, int month)
+        {
+            if (day == 1 && month == 1)
+            {
+                return true;
+            }
+
+            if (day == 6 && month == 1)
+            {
+                return true;
+            }
+
+            if (day == 4 && month == 4) // Easter
+            {
+                return true;
+            }
+
+            if (day == 5 && month == 4) // Italy Only: Easter Monday
+            {
+                return true;
+            }
+
+            if (day == 25 && month == 4) // Italy Only: 25 Aprile
+            {
+                return true;
+            }
+
+            if (day == 1 && month == 5)
+            {
+                return true;
+            }
+
+            if (day == 2 && month == 6)
+            {
+                return true;
+            }
+
+            if (day == 15 && month == 8)
+            {
+                return true;
+            }
+
+            if (day == 1 && month == 11)
+            {
+                return true;
+            }
+
+            if (day == 8 && month == 12)
+            {
+                return true;
+            }
+
+            if (day == 25 && month == 12)
+            {
+                return true;
+            }
+
+            if (day == 26 && month == 12)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void Calendar(string target)
+        {
+            var year = 2021;
+            var dest = new FileInfo(target);
+
+            var writer = new PdfWriter(dest);
+            var pdf = new PdfDocument(writer);
+            Document document = new Document(pdf, PageSize.A4);
+
+            string CAMBRIA = @"C:\Windows\Fonts\Cambriab.ttf";
+            FontProgram fontProgram = FontProgramFactory.CreateFont(CAMBRIA);
+            PdfFont font = PdfFontFactory.CreateFont(fontProgram, PdfEncodings.WINANSI, true);
+
+            bool first = true;
+            for (var i = Month_Start; i <= Month_End; i++)
+            {
+                if (first)
+                {
+                    first = false;
+                } else
+                {
+                    document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
+                }
+                MonthPage(i, font, document, year);
+            }
+
+            document.Close();
         }
 
         static void Main(string[] args)
         {
-            //Hello(@"D:\Temp\Hello.pdf");
-            // Astley(@"D:\Temp\Astley.pdf");
-            // FoxAndDog(@"D:\Temp\FoxAndDog.pdf", @"D:\Temp\dog.bmp", @"D:\Temp\fox.bmp");
-            // DataTable(@"D:\Temp\DataTable.pdf", @"D:\Temp\united_states.csv");
-            Calendar(@"D:\Temp\Gennaio.pdf");
+            Calendar(@"D:\Temp\Calendario2021.pdf");
         }
     }
 }
