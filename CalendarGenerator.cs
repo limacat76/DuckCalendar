@@ -97,7 +97,7 @@ namespace DuckCalendar
             {
                 if (curMonth != myDT.Month)
                 {
-                    mese[i - 1] = CalendarGenerator.VUOTO;
+                    mese[i - 1] = VUOTO;
                 }
                 else
                 {
@@ -108,7 +108,7 @@ namespace DuckCalendar
                 myDT = myDT.AddDays(1);
 
             }
-            mese[31] = CalendarGenerator.VUOTO;
+            mese[31] = VUOTO;
 
             Mese mesecontainer = new Mese(year, monthName, mese);
             return mesecontainer;
@@ -157,6 +157,19 @@ namespace DuckCalendar
             return "";
         }
 
+        public const int Month_Start = 1;
+        public const int Month_End = 12;
+
+        internal static Mese[] GenerateYear(int year)
+        {
+            Mese[] anno = new Mese[Month_End];
+            for (var i = Month_Start; i <= Month_End; i++)
+            {
+                anno[i - 1] = CalendarGenerator.GenerateMonth(year, i);
+            }
+
+            return anno;
+        }
 
         private static bool IsFestivity(int day, int month)
         {

@@ -13,120 +13,14 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>. */
-using System.IO;
-using iText.IO.Font;
-using iText.IO.Font.Constants;
-using iText.IO.Image;
-using iText.IO.Util;
-using iText.Kernel.Colors;
-using iText.Kernel.Font;
-using iText.Kernel.Geom;
-using iText.Kernel.Pdf;
-using iText.Layout;
-using iText.Layout.Element;
-using iText.Layout.Properties;
+
+
+using System;
 
 namespace DuckCalendar
 {
-
     class Program
     {
-
-        public const int Month_Start = 1;
-        public const int Month_End = 12;
-
-        static DeviceRgb rosso = new DeviceRgb(245, 15, 15);
-        static DeviceRgb bianco = new DeviceRgb(255, 255, 255);
-
-        
-
-        private static void MonthToPage(PdfFont font, Document document, Mese mesecontainer)
-        {
-            var table = new Table(new float[2]).UseAllAvailableWidth();
-            table.SetMarginTop(0);
-            table.SetMarginBottom(0);
-
-            var cell = new Cell(2, 2).Add(new Paragraph($"{mesecontainer.nome} {mesecontainer.anno}").SetFont(font).SetFontSize(32));
-            cell.SetTextAlignment(TextAlignment.CENTER);
-            cell.SetVerticalAlignment(VerticalAlignment.MIDDLE);
-            cell.SetFontColor(bianco);
-            cell.SetBackgroundColor(rosso);
-            table.AddCell(cell);
-
-            Giorno[] mese = mesecontainer.giorni;
-
-            for (int i = 0; i < 16; i++)
-            {
-                Giorno giorno;
-                if (i < mese.Length) {
-                    giorno = mese[i];
-                } else
-                {
-                    giorno = CalendarGenerator.VUOTO;
-                }
-                cell = MakeDayCell(giorno, font);
-                table.AddCell(cell);
-
-                if (i + 16 < mese.Length)
-                {
-                    giorno = mese[i + 16];
-                }
-                else
-                {
-                    giorno = CalendarGenerator.VUOTO;
-                }
-                cell = MakeDayCell(giorno, font);
-                table.AddCell(cell);
-            }
-            table.SetHeight(PageSize.A4.GetHeight() - 80);
-            document.Add(table);
-        }
-
-
-        private static Cell MakeDayCell(Giorno giorno, PdfFont font)
-        {
-            Cell cell = new Cell().Add(new Paragraph(giorno.Stampa()).SetFont(font).SetFontSize(16)); // .SetHeight(cellHeight);
-            cell.SetPaddingLeft(10);
-            cell.SetVerticalAlignment(VerticalAlignment.MIDDLE);
-            if (giorno.Festivo)
-            {
-                cell.SetFontColor(rosso);
-            }
-            return cell;
-        }
-
-        private static void Calendar(string target)
-        {
-            var year = 2021;
-            var dest = new FileInfo(target);
-
-            var writer = new PdfWriter(dest);
-            var pdf = new PdfDocument(writer);
-            Document document = new Document(pdf, PageSize.A4);
-
-            string CAMBRIA = @"C:\Windows\Fonts\Cambriab.ttf";
-            string FONT = @"D:\Temp\OpenSansEmoji.ttf";
-
-            FontProgram fontProgram = FontProgramFactory.CreateFont(FONT);
-            PdfFont font = PdfFontFactory.CreateFont(fontProgram, PdfEncodings.IDENTITY_H, true);
-
-            bool first = true;
-            for (var i = Month_Start; i <= Month_End; i++)
-            {
-                if (first)
-                {
-                    first = false;
-                } else
-                {
-                    document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
-                }
-                Mese mese = CalendarGenerator.GenerateMonth(year, i);
-                MonthToPage(font, document, mese);
-            }
-
-            document.Close();
-        }
-
         /**
         Currently the program generates the calendar based on the month when the program is invoked.
         January - September: current year.
@@ -134,7 +28,19 @@ namespace DuckCalendar
          */
         static void Main(string[] args)
         {
-            Calendar(@"D:\Temp\Calendario2021.pdf");
+            DateTime now = DateTime.Now;
+            int year = now.Year;
+            if (now.Month > 9)
+            {
+                year += 1;
+            }
+
+            string directory = @"D:\Temp\";
+            string filenameradix = "Calendario";
+            string filename = $"{directory}{filenameradix}{year}.pdf";
+
+            Mese[] calendar= CalendarGenerator.GenerateYear(year);
+            CalendarPrinter.Calendar(filename, calendar);
         }
     }
 }
