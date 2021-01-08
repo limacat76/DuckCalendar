@@ -34,7 +34,6 @@ namespace DuckCalendar
             {
                 year += 1;
             }
-
             string directory = @"D:\Temp\";
             string filenameradix = "Calendario";
             string filename = $"{directory}{filenameradix}{year}.pdf";

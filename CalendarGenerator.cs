@@ -103,7 +103,7 @@ namespace DuckCalendar
                 {
                     DayOfWeek dw = myDT.DayOfWeek;
 
-                    days[i - 1] = new Day(myDT.Day, UppercaseFirst(dtfi.GetAbbreviatedDayName(dw)), IsMoon(myDT), dw == DayOfWeek.Sunday || IsFestivity(myDT.Day, myDT.Month));
+                    days[i - 1] = new Day(myDT.Day, UppercaseFirst(dtfi.GetAbbreviatedDayName(dw)), IsMoon(myDT), dw == DayOfWeek.Sunday || IsFestivity(myDT));
                 }
                 myDT = myDT.AddDays(1);
 
@@ -130,6 +130,31 @@ namespace DuckCalendar
             r -= ((year < 2000) ? 4 : 8.3);
             r = Math.Floor(r + 0.5) % 30;
             return (int)((r < 0) ? r + 30 : r);
+        }
+
+        // Easter Management, this is horrible and should be made better, 
+        private static int easter_month = 0;
+        private static int easter_day = 0;
+
+        // Let's calculate easter with the gauss method
+        private static void CalculateEaster(int y)
+        {
+           
+            int a = y % 19;
+            int b = y / 100;
+            int c = y % 100;
+            int d = b / 4;
+            int e = b % 4;
+            int g = (8 * b + 13) / 25;
+            int h = (19 * a + b - d - g + 15) % 30;
+            int j = c / 4;
+            int k = c % 4;
+            int m = (a + 11 * h) / 319;
+            int r = (2 * e + 2 * j - k - h + m + 32) % 7;
+            int n = (h - m + r + 90) / 25;
+            int p = (h - m + r + n + 19) % 32;
+            easter_month = n;
+            easter_day = p;
         }
 
         private static string IsMoon(DateTime myDT)
@@ -162,6 +187,7 @@ namespace DuckCalendar
 
         public static Month[] GenerateYear(int year)
         {
+            CalculateEaster(year);
             Month[] months = new Month[Month_End];
             for (var i = Month_Start; i <= Month_End; i++)
             {
@@ -171,8 +197,12 @@ namespace DuckCalendar
             return months;
         }
 
-        private static bool IsFestivity(int day, int month)
+        // I am not proud about this, but given the size / scope of the program it's enough for now...
+        private static bool IsFestivity(DateTime date)
         {
+            int day = date.Day;
+            int month = date.Month;
+
             if (day == 1 && month == 1)
             {
                 return true;
@@ -183,12 +213,15 @@ namespace DuckCalendar
                 return true;
             }
 
-            if (day == 4 && month == 4) // Easter
+            if (day == easter_day && month == easter_month) // Easter
             {
                 return true;
             }
 
-            if (day == 5 && month == 4) // Italy Only: Easter Monday
+            DateTime yesterday = date.AddDays(-1);
+            int yDay = yesterday.Day;
+            int yMonth = yesterday.Month;
+            if (yDay == easter_day && yMonth == easter_month) // Easter Monday (Italy Only)
             {
                 return true;
             }
