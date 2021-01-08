@@ -29,68 +29,68 @@ namespace DuckCalendar
     class CalendarPrinter
     {
 
-        static DeviceRgb rosso = new DeviceRgb(245, 15, 15);
-        static DeviceRgb bianco = new DeviceRgb(255, 255, 255);
+        static DeviceRgb red = new DeviceRgb(245, 15, 15);
+        static DeviceRgb white = new DeviceRgb(255, 255, 255);
 
-        private static void MonthToPage(PdfFont font, Document document, Mese mesecontainer)
+        private static void MonthToPage(PdfFont font, Document document, Month month)
         {
             var table = new Table(new float[2]).UseAllAvailableWidth();
             table.SetMarginTop(0);
             table.SetMarginBottom(0);
 
-            var cell = new Cell(2, 2).Add(new Paragraph($"{mesecontainer.nome} {mesecontainer.anno}").SetFont(font).SetFontSize(32));
+            var cell = new Cell(2, 2).Add(new Paragraph($"{month.name} {month.year}").SetFont(font).SetFontSize(32));
             cell.SetTextAlignment(TextAlignment.CENTER);
             cell.SetVerticalAlignment(VerticalAlignment.MIDDLE);
-            cell.SetFontColor(bianco);
-            cell.SetBackgroundColor(rosso);
+            cell.SetFontColor(white);
+            cell.SetBackgroundColor(red);
             table.AddCell(cell);
 
-            Giorno[] mese = mesecontainer.giorni;
+            Day[] days = month.days;
 
             for (int i = 0; i < 16; i++)
             {
-                Giorno giorno;
-                if (i < mese.Length)
+                Day day;
+                if (i < days.Length)
                 {
-                    giorno = mese[i];
+                    day = days[i];
                 }
                 else
                 {
-                    giorno = CalendarGenerator.VUOTO;
+                    day = CalendarGenerator.EMPTY;
                 }
-                cell = MakeDayCell(giorno, font);
+                cell = MakeDayCell(day, font);
                 table.AddCell(cell);
 
-                if (i + 16 < mese.Length)
+                if (i + 16 < days.Length)
                 {
-                    giorno = mese[i + 16];
+                    day = days[i + 16];
                 }
                 else
                 {
-                    giorno = CalendarGenerator.VUOTO;
+                    day = CalendarGenerator.EMPTY;
                 }
-                cell = MakeDayCell(giorno, font);
+                cell = MakeDayCell(day, font);
                 table.AddCell(cell);
             }
             table.SetHeight(PageSize.A4.GetHeight() - 80);
             document.Add(table);
         }
 
-        private static Cell MakeDayCell(Giorno giorno, PdfFont font)
+        private static Cell MakeDayCell(Day giorno, PdfFont font)
         {
-            Cell cell = new Cell().Add(new Paragraph(giorno.Stampa()).SetFont(font).SetFontSize(16)); // .SetHeight(cellHeight);
+            Cell cell = new Cell().Add(new Paragraph(giorno.Print()).SetFont(font).SetFontSize(16));
             cell.SetPaddingLeft(10);
             cell.SetVerticalAlignment(VerticalAlignment.MIDDLE);
-            if (giorno.Festivo)
+            if (giorno.Festive)
             {
-                cell.SetFontColor(rosso);
+                cell.SetFontColor(red);
             }
             return cell;
         }
 
-        public static void Calendar(string target, Mese[] anno)
+        public static void Print(string filename, Month[] calendar)
         {
-            var dest = new FileInfo(target);
+            var dest = new FileInfo(filename);
 
             var writer = new PdfWriter(dest);
             var pdf = new PdfDocument(writer);
@@ -103,7 +103,7 @@ namespace DuckCalendar
             PdfFont font = PdfFontFactory.CreateFont(fontProgram, PdfEncodings.IDENTITY_H, true);
 
             bool first = true;
-            foreach (Mese mese in anno)
+            foreach (Month month in calendar)
             {
                 if (first)
                 {
@@ -113,7 +113,7 @@ namespace DuckCalendar
                 {
                     document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
                 }
-                MonthToPage(font, document, mese);
+                MonthToPage(font, document, month);
             }
 
             document.Close();

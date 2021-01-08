@@ -39,8 +39,8 @@ namespace DuckCalendar
             string filenameradix = "Calendario";
             string filename = $"{directory}{filenameradix}{year}.pdf";
 
-            Mese[] calendar= CalendarGenerator.GenerateYear(year);
-            CalendarPrinter.Calendar(filename, calendar);
+            Month[] calendar= CalendarGenerator.GenerateYear(year);
+            CalendarPrinter.Print(filename, calendar);
         }
     }
 }

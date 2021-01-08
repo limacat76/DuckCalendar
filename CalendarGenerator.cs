@@ -19,27 +19,27 @@ using System.Globalization;
 namespace DuckCalendar
 {
 
-    public struct Giorno
+    public struct Day
     {
-        int numero;
-        string nome;
-        public bool Festivo
+        int number;
+        string name;
+        public bool Festive
         {
             get;
         }
 
-        public Giorno(int numero, string nome, string luna, bool festivo)
+        public Day(int number, string name, string moonphase, bool festive)
         {
-            this.numero = numero;
-            this.nome = $"{nome} {luna}";
-            this.Festivo = festivo;
+            this.number = number;
+            this.name = $"{name} {moonphase}";
+            this.Festive = festive;
         }
 
-        public string Stampa()
+        public string Print()
         {
-            if (numero != 0)
+            if (number != 0)
             {
-                return $"{numero} {nome}";
+                return $"{number} {name}";
             }
             else
             {
@@ -49,24 +49,24 @@ namespace DuckCalendar
 
     }
 
-    public struct Mese
+    public struct Month
     {
 
-        public int anno;
-        public string nome;
-        public Giorno[] giorni;
+        public int year;
+        public string name;
+        public Day[] days;
 
-        public Mese(int anno, string nome, Giorno[] giorni)
+        public Month(int year, string name, Day[] days)
         {
-            this.anno = anno;
-            this.nome = nome;
-            this.giorni = giorni;
+            this.year = year;
+            this.name = name;
+            this.days = days;
         }
     }
 
     class CalendarGenerator
     {
-        public static Giorno VUOTO = new Giorno(0, "", "", false);
+        public static Day EMPTY = new Day(0, "", "", false);
 
         private const int new_moon = 0x1F311; // 🌑 U+1F311
         private const int first_quarter = 0x1f313; // 🌓 U+1F313
@@ -84,33 +84,33 @@ namespace DuckCalendar
             return char.ToUpper(s[0]) + s.Substring(1);
         }
 
-        public static Mese GenerateMonth(int year, int mesenum)
+        public static Month GenerateMonth(int year, int month)
         {
             DateTimeFormatInfo dtfi = CultureInfo.CurrentCulture.DateTimeFormat;
-            string monthName = UppercaseFirst(dtfi.GetMonthName(mesenum));
+            string name = UppercaseFirst(dtfi.GetMonthName(month));
 
-            // popoliamo il mese
-            Giorno[] mese = new Giorno[32];
-            DateTime myDT = new DateTime(year, mesenum, 1, new GregorianCalendar());
+            // Populating the months
+            Day[] days = new Day[32];
+            DateTime myDT = new DateTime(year, month, 1, new GregorianCalendar());
             int curMonth = myDT.Month;
             for (int i = 1; i <= 31; i++)
             {
                 if (curMonth != myDT.Month)
                 {
-                    mese[i - 1] = VUOTO;
+                    days[i - 1] = EMPTY;
                 }
                 else
                 {
                     DayOfWeek dw = myDT.DayOfWeek;
 
-                    mese[i - 1] = new Giorno(myDT.Day, UppercaseFirst(dtfi.GetAbbreviatedDayName(dw)), IsMoon(myDT), dw == DayOfWeek.Sunday || IsFestivity(myDT.Day, myDT.Month));
+                    days[i - 1] = new Day(myDT.Day, UppercaseFirst(dtfi.GetAbbreviatedDayName(dw)), IsMoon(myDT), dw == DayOfWeek.Sunday || IsFestivity(myDT.Day, myDT.Month));
                 }
                 myDT = myDT.AddDays(1);
 
             }
-            mese[31] = VUOTO;
+            days[31] = EMPTY;
 
-            Mese mesecontainer = new Mese(year, monthName, mese);
+            Month mesecontainer = new Month(year, name, days);
             return mesecontainer;
         }
 
@@ -160,15 +160,15 @@ namespace DuckCalendar
         public const int Month_Start = 1;
         public const int Month_End = 12;
 
-        internal static Mese[] GenerateYear(int year)
+        internal static Month[] GenerateYear(int year)
         {
-            Mese[] anno = new Mese[Month_End];
+            Month[] months = new Month[Month_End];
             for (var i = Month_Start; i <= Month_End; i++)
             {
-                anno[i - 1] = CalendarGenerator.GenerateMonth(year, i);
+                months[i - 1] = GenerateMonth(year, i);
             }
 
-            return anno;
+            return months;
         }
 
         private static bool IsFestivity(int day, int month)
