@@ -68,12 +68,12 @@ namespace DuckCalendar
     {
         public static Day EMPTY = new Day(0, "", "", false);
 
-        private const int new_moon = 0x1F311; // 🌑 U+1F311
-        private const int first_quarter = 0x1f313; // 🌓 U+1F313
-        private const int full_moon = 0x1f315; // 🌕 U+1F315
-        private const int last_quarter = 0x1f317; // 🌗 U+1F317
+        private static string new_moon = char.ConvertFromUtf32(0x1F311); // 🌑 U+1F311
+        private static string first_quarter = char.ConvertFromUtf32(0x1f313); // 🌓 U+1F313
+        private static string full_moon = char.ConvertFromUtf32(0x1f315); // 🌕 U+1F315
+        private static string last_quarter = char.ConvertFromUtf32(0x1f317); // 🌗 U+1F317
 
-        static string UppercaseFirst(string s)
+        private static string UppercaseFirst(string s)
         {
             // Check for empty string.
             if (string.IsNullOrEmpty(s))
@@ -84,7 +84,7 @@ namespace DuckCalendar
             return char.ToUpper(s[0]) + s.Substring(1);
         }
 
-        public static Month GenerateMonth(int year, int month)
+        private static Month GenerateMonth(int year, int month)
         {
             DateTimeFormatInfo dtfi = CultureInfo.CurrentCulture.DateTimeFormat;
             string name = UppercaseFirst(dtfi.GetMonthName(month));
@@ -132,7 +132,7 @@ namespace DuckCalendar
             return (int)((r < 0) ? r + 30 : r);
         }
 
-        private static String IsMoon(DateTime myDT)
+        private static string IsMoon(DateTime myDT)
         {
             int cw = Conway(myDT.Year, myDT.Month, myDT.Day);
             myDT = myDT.AddDays(-1);
@@ -140,19 +140,19 @@ namespace DuckCalendar
 
             if (cw == 0 && cwYesterday != 29 || cw == 29)
             {
-                return char.ConvertFromUtf32(new_moon);
+                return new_moon;
             }
             if (cw == 7)
             {
-                return char.ConvertFromUtf32(first_quarter);
+                return first_quarter;
             }
             if (cw == 15)
             {
-                return char.ConvertFromUtf32(full_moon);
+                return full_moon;
             }
             if (cw == 22)
             {
-                return char.ConvertFromUtf32(last_quarter);
+                return last_quarter;
             }
             return "";
         }
@@ -160,7 +160,7 @@ namespace DuckCalendar
         public const int Month_Start = 1;
         public const int Month_End = 12;
 
-        internal static Month[] GenerateYear(int year)
+        public static Month[] GenerateYear(int year)
         {
             Month[] months = new Month[Month_End];
             for (var i = Month_Start; i <= Month_End; i++)
