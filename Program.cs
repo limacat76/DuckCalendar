@@ -34,12 +34,13 @@ namespace DuckCalendar
             {
                 year += 1;
             }
-            string directory = @"D:\Temp\";
-            string filenameradix = "Calendario";
-            string filename = $"{directory}{filenameradix}{year}.pdf";
 
+            DCEnvironment instance = DCEnvironment.GetInstance();
+            string filename = instance.CalendarFilename(year);
+            Console.WriteLine(filename);
             Month[] calendar= CalendarGenerator.GenerateYear(year);
             CalendarPrinter.Print(filename, calendar);
+            Console.WriteLine("finished");
         }
     }
 }

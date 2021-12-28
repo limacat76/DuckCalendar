@@ -96,10 +96,8 @@ namespace DuckCalendar
             var pdf = new PdfDocument(writer);
             Document document = new Document(pdf, PageSize.A4);
 
-            string CAMBRIA = @"C:\Windows\Fonts\Cambriab.ttf";
-            string FONT = @"D:\Temp\OpenSansEmoji.ttf";
-
-            FontProgram fontProgram = FontProgramFactory.CreateFont(FONT);
+            DCEnvironment environment = DCEnvironment.GetInstance();
+            FontProgram fontProgram = FontProgramFactory.CreateFont(environment.FontFilename());
             PdfFont font = PdfFontFactory.CreateFont(fontProgram, PdfEncodings.IDENTITY_H, true);
 
             bool first = true;
